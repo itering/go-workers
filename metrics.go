@@ -27,17 +27,25 @@ var (
 		Help:      "Total number of tasks retried.",
 	})
 
-	TasksInqueue = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "worker_task_inqueue",
-			Help: "number of tasks in queue.",
+	TaskEnqueue = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "worker_task_enqueue",
+			Help: "number of task enqueue, grouped by queue name",
 		},
-		[]string{"type"},
+		[]string{"name"},
+	)
+
+	TaskDequeue = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "worker_task_dequeue",
+			Help: "number of task dequeue, grouped by queue name",
+		},
+		[]string{"name"},
 	)
 )
 
 func init() {
-	prometheus.MustRegister(TaskProcessed, TaskFailed, TaskRetries, TasksInqueue)
+	prometheus.MustRegister(TaskProcessed, TaskFailed, TaskRetries, TaskEnqueue, TaskDequeue)
 }
 
 func MetricsServer(port int) {
