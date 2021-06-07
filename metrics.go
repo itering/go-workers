@@ -10,20 +10,20 @@ import (
 
 var (
 	TaskProcessed = prometheus.NewCounter(prometheus.CounterOpts{
-		Subsystem: "worker_task",
-		Name:      "processed",
+		Subsystem: "",
+		Name:      "worker_task_processed",
 		Help:      "Total number of tasks processed.",
 	})
 
 	TaskFailed = prometheus.NewCounter(prometheus.CounterOpts{
-		Subsystem: "worker_task",
-		Name:      "failed",
+		Subsystem: "",
+		Name:      "worker_task_failed",
 		Help:      "Total number of tasks failed.",
 	})
 
 	TaskRetries = prometheus.NewCounter(prometheus.CounterOpts{
-		Subsystem: "worker_task",
-		Name:      "retries",
+		Subsystem: "",
+		Name:      "worker_task_retries",
 		Help:      "Total number of tasks retried.",
 	})
 
