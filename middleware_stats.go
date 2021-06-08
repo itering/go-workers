@@ -22,6 +22,13 @@ func (l *MiddlewareStats) Call(queue string, message *Msg, next func() bool) (ac
 }
 
 func incrementStats(metric string) {
+	// prom metric
+	switch metric {
+	case "failed":
+		TaskFailed.Inc()
+	case "processed":
+		TaskProcessed.Inc()
+	}
 	conn := Config.Pool.Get()
 	defer conn.Close()
 

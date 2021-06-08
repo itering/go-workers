@@ -84,6 +84,7 @@ func (f *fetch) tryFetchMessage() {
 	defer conn.Close()
 
 	message, err := redis.String(conn.Do("brpoplpush", f.queue, f.inprogressQueue(), 1))
+	TaskEnqueue.WithLabelValues(f.queue).Inc()
 
 	if err != nil {
 		// If redis returns null, the queue is empty. Just ignore the error.
@@ -111,6 +112,7 @@ func (f *fetch) Acknowledge(message *Msg) {
 	conn := Config.Pool.Get()
 	defer conn.Close()
 	conn.Do("lrem", f.inprogressQueue(), -1, message.OriginalJson())
+	TaskDequeue.WithLabelValues(f.queue).Inc()
 }
 
 func (f *fetch) Messages() chan *Msg {

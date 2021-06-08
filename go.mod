@@ -9,4 +9,5 @@ require (
 	github.com/garyburd/redigo v1.6.2
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/orfjackal/nanospec.go v0.0.0-20120727230329-de4694c1d701 // indirect
+	github.com/prometheus/client_golang v1.10.0
 )
