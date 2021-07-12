@@ -84,7 +84,7 @@ func EnqueueWithOptions(queue, class string, args interface{}, opts EnqueueOptio
 		return "", err
 	}
 	queue = Config.Namespace + "queue:" + queue
-	_, err = conn.Do("zset", queue, data.EnqueuedAt, bytes)
+	_, err = conn.Do("zadd", queue, data.EnqueuedAt, bytes)
 	if err != nil {
 		return "", err
 	}
