@@ -2,8 +2,6 @@ package workers
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/garyburd/redigo/redis"
 )
 
@@ -82,18 +80,9 @@ func (f *fetch) Fetch() {
 func (f *fetch) tryFetchMessage() {
 	conn := Config.Pool.Get()
 	defer conn.Close()
-	var err error
 	_ = conn.Send("ZPOPMIN", f.queue)
 	_ = conn.Send("lpush", f.inprogressQueue())
-	defer func() {
-		if err != nil && err.Error() != "redigo: nil returned" {
-			Logger.Println("ERR:", err)
-			time.Sleep(1 * time.Second)
-		}
-	}()
-
-	err = conn.Flush()
-	if err == nil {
+	if err := conn.Flush(); err == nil {
 		if r, _ := redis.Strings(conn.Receive()); len(r) == 2 {
 			TaskEnqueue.WithLabelValues(f.queue).Inc()
 			f.sendMessage(r[0])
