@@ -82,18 +82,22 @@ func (f *fetch) Fetch() {
 func (f *fetch) tryFetchMessage() {
 	conn := Config.Pool.Get()
 	defer conn.Close()
-
-	message, err := redis.String(conn.Do("brpoplpush", f.queue, f.inprogressQueue(), 1))
-	TaskEnqueue.WithLabelValues(f.queue).Inc()
-
-	if err != nil {
-		// If redis returns null, the queue is empty. Just ignore the error.
-		if err.Error() != "redigo: nil returned" {
-			Logger.Println("ERR: ", err)
+	var err error
+	_ = conn.Send("ZPOPMIN", f.queue)
+	_ = conn.Send("lpush", f.inprogressQueue())
+	defer func() {
+		if err != nil && err.Error() != "redigo: nil returned" {
+			Logger.Println("ERR:", err)
 			time.Sleep(1 * time.Second)
 		}
-	} else {
-		f.sendMessage(message)
+	}()
+
+	err = conn.Flush()
+	if err == nil {
+		if r, _ := redis.Strings(conn.Receive()); len(r) == 2 {
+			TaskEnqueue.WithLabelValues(f.queue).Inc()
+			f.sendMessage(r[0])
+		}
 	}
 }
 
