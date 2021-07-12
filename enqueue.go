@@ -2,6 +2,8 @@ package workers
 
 import (
 	"crypto/rand"
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -61,15 +63,16 @@ func EnqueueWithOptions(queue, class string, args interface{}, opts EnqueueOptio
 		Queue:          queue,
 		Class:          class,
 		Args:           args,
-		Jid:            generateJid(),
-		EnqueuedAt:     now,
 		EnqueueOptions: opts,
 	}
-
 	bytes, err := json.Marshal(data)
 	if err != nil {
 		return "", err
 	}
+
+	checksum := sha1.New()
+	_, _ = checksum.Write(bytes)
+	data.Jid = BytesToHex(checksum.Sum(nil))
 
 	if now < opts.At {
 		err := enqueueAt(data.At, bytes)
@@ -84,7 +87,7 @@ func EnqueueWithOptions(queue, class string, args interface{}, opts EnqueueOptio
 		return "", err
 	}
 	queue = Config.Namespace + "queue:" + queue
-	_, err = conn.Do("zadd", queue, data.EnqueuedAt, bytes)
+	_, err = conn.Do("zadd", queue, now, bytes)
 	if err != nil {
 		return "", err
 	}
@@ -117,4 +120,10 @@ func durationToSecondsWithNanoPrecision(d time.Duration) float64 {
 
 func nowToSecondsWithNanoPrecision() float64 {
 	return timeToSecondsWithNanoPrecision(time.Now())
+}
+
+func BytesToHex(b []byte) string {
+	c := make([]byte, hex.EncodedLen(len(b)))
+	hex.Encode(c, b)
+	return string(c)
 }
