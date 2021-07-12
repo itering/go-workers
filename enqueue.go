@@ -1,12 +1,9 @@
 package workers
 
 import (
-	"crypto/rand"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
-	"io"
 	"time"
 )
 
@@ -35,18 +32,8 @@ type EnqueueOptions struct {
 	Policy     int     `json:"policy,omitempty"`
 }
 
-func generateJid() string {
-	// Return 12 random bytes as 24 character hex
-	b := make([]byte, 12)
-	_, err := io.ReadFull(rand.Reader, b)
-	if err != nil {
-		return ""
-	}
-	return fmt.Sprintf("%x", b)
-}
-
 func Enqueue(queue, class string, args interface{}) (string, error) {
-	return EnqueueWithOptions(queue, class, args, EnqueueOptions{At: nowToSecondsWithNanoPrecision(), Policy: fifo})
+	return EnqueueWithOptions(queue, class, args, EnqueueOptions{Policy: fifo})
 }
 
 func EnqueueIn(queue, class string, in float64, args interface{}) (string, error) {
@@ -65,14 +52,16 @@ func EnqueueWithOptions(queue, class string, args interface{}, opts EnqueueOptio
 		Args:           args,
 		EnqueueOptions: opts,
 	}
+	argsBytes, _ := json.Marshal(args)
+
+	checksum := sha1.New()
+	_, _ = checksum.Write(argsBytes)
+	data.Jid = BytesToHex(checksum.Sum(nil))
+
 	bytes, err := json.Marshal(data)
 	if err != nil {
 		return "", err
 	}
-
-	checksum := sha1.New()
-	_, _ = checksum.Write(bytes)
-	data.Jid = BytesToHex(checksum.Sum(nil))
 
 	if now < opts.At {
 		err := enqueueAt(data.At, bytes)
